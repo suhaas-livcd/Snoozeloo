@@ -22,7 +22,7 @@ fun LoadingScreen(modifier: Modifier) {
         modifier = modifier
             .fillMaxSize()
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(color = appPrimaryColor)
     }
 }
 
