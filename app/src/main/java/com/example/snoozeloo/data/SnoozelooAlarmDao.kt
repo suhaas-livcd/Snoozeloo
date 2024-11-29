@@ -16,6 +16,6 @@ interface SnoozelooAlarmDao {
     @Query("DELETE FROM snoozelooalarm WHERE id = :id")
     fun deleteAlarmById(id: Int)
 
-    @Query("SELECT * FROM snoozelooalarm ORDER BY time ASC")
+    @Query("SELECT * FROM snoozelooalarm ORDER BY timeHours ASC")
     fun orderAlarmsByTime(): Flow<List<SnoozelooAlarm>>
 }

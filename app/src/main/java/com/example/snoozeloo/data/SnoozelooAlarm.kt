@@ -7,9 +7,14 @@ import androidx.room.PrimaryKey
 data class SnoozelooAlarm(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String = "",
-    val time: String,
-    val isEnabled: Boolean,
-    val repeatDays: Int,
-    val sound: String = "Default"
+    val name: String = "Alarm",
+    val timeHours: Int = 0,
+    val timeMinutes: Int = 0,
+    val isEnabled: Boolean = true,
+    val repeatDays: Int = 0,
+    val alarmRingtone: String = "Default",
+    val isAlarmSilent: Boolean = false,
+    val alarmVolume: Float = 0.5f,
+    val vibrate: Boolean = true
 )
+

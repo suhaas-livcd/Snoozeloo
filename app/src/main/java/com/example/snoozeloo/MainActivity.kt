@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val uiState by appViewModel.uiState.collectAsState()
             SnoozelooTheme {
                 Scaffold(
                     modifier = Modifier
@@ -41,33 +44,37 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController, startDestination = NavRoute.ALARMS_SCREEN) {
                         composable(NavRoute.ALARMS_SCREEN) {
                             AlarmsScreen(
-                                viewModel = appViewModel,
+                                uiState = uiState,
                                 modifier = Modifier.padding(innerPadding),
                                 navToAlarmSettingsScreen = {
                                     navController.navigate(NavRoute.ALARM_SETTINGS_SCREEN)
-                                })
+                                },
+                                onEvent = appViewModel::onEvent
+                            )
                         }
 
                         composable(NavRoute.ALARM_SETTINGS_SCREEN) {
                             AlarmSettingsScreen(
-                                viewModel = appViewModel,
+                                alarmState = uiState.createAlarm,
                                 modifier = Modifier.padding(innerPadding),
                                 navBackToAlarmsScreen = {
                                     navController.popBackStack()
                                 },
                                 navToAlarmRingtonesScreen = {
                                     navController.navigate(NavRoute.ALARM_RINGTONE_SCREEN)
-                                }
+                                },
+                                onEvent = appViewModel::onEvent
                             )
                         }
 
                         composable(NavRoute.ALARM_RINGTONE_SCREEN) {
                             AlarmRingtoneScreen(
-                                viewModel = appViewModel,
+                                uiState = uiState,
                                 modifier = Modifier.padding(innerPadding),
                                 navBackToAlarmSettingsScreen = {
                                     navController.popBackStack()
-                                }
+                                },
+                                onEvent = appViewModel::onEvent
                             )
                         }
                     }

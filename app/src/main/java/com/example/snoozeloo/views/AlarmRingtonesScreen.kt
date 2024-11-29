@@ -25,42 +25,52 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.snoozeloo.R
-import com.example.snoozeloo.viewmodel.AppViewModel
+import com.example.snoozeloo.data.AppUiState
+import com.example.snoozeloo.data.SnoozelooAlarmEvents
 
 @Composable
 fun AlarmRingtoneScreen(
-    viewModel: AppViewModel,
+    uiState: AppUiState,
     modifier: Modifier = Modifier,
-    navBackToAlarmSettingsScreen: () -> Unit
+    navBackToAlarmSettingsScreen: () -> Unit,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
 ) {
     Column(
         modifier = modifier.padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .wrapContentHeight()
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Image(
-                imageVector = ImageVector.vectorResource(R.drawable.back_icon),
-                contentDescription = "Back Icon",
-                modifier = Modifier.clickable {
-                    navBackToAlarmSettingsScreen()
-                })
-        }
+        HeaderRow(navBackToAlarmSettingsScreen)
 
         // Wrap in LazyColumn
-        Column(modifier = Modifier.padding(top = 24.dp, start = 16.dp, end = 16.dp)) {
-            RingtoneListItem(isSilent = true, isSelected = false, ringtoneName = "Silent")
-            RingtoneListItem(
-                isSilent = false,
-                isSelected = true,
-                ringtoneName = "Default (BrightMorning)"
-            )
-        }
+        RingtonesList()
+    }
+}
 
+@Composable
+private fun RingtonesList() {
+    Column(modifier = Modifier.padding(top = 24.dp, start = 16.dp, end = 16.dp)) {
+        RingtoneListItem(isSilent = true, isSelected = false, ringtoneName = "Silent")
+        RingtoneListItem(
+            isSilent = false,
+            isSelected = true,
+            ringtoneName = "Default (BrightMorning)"
+        )
+    }
+}
 
+@Composable
+private fun HeaderRow(navBackToAlarmSettingsScreen: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .wrapContentHeight()
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Image(
+            imageVector = ImageVector.vectorResource(R.drawable.back_icon),
+            contentDescription = "Back Icon",
+            modifier = Modifier.clickable {
+                navBackToAlarmSettingsScreen()
+            })
     }
 }
 

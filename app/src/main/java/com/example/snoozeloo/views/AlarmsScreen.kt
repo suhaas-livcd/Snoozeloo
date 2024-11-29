@@ -28,8 +28,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,18 +42,21 @@ import androidx.compose.ui.unit.sp
 import com.example.snoozeloo.R
 import com.example.snoozeloo.data.AppUiState
 import com.example.snoozeloo.data.SnoozelooAlarm
+import com.example.snoozeloo.data.SnoozelooAlarmEvents
+import com.example.snoozeloo.data.WeekDays
 import com.example.snoozeloo.ui.theme.appPrimaryColor
 import com.example.snoozeloo.ui.theme.appSecondaryColor
 import com.example.snoozeloo.ui.theme.appTertiaryColor
 import com.example.snoozeloo.ui.theme.greyTextColor
-import com.example.snoozeloo.viewmodel.AppViewModel
 import timber.log.Timber
 
 @Composable
 fun AlarmsScreen(
-    viewModel: AppViewModel, modifier: Modifier = Modifier, navToAlarmSettingsScreen: () -> Unit
+    uiState: AppUiState,
+    modifier: Modifier = Modifier,
+    navToAlarmSettingsScreen: () -> Unit,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
 ) {
-    val uiState: AppUiState by viewModel.uiState.collectAsState()
     when {
         uiState.isLoading -> {
             LoadingScreen(modifier)
@@ -157,7 +158,7 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = alarm.time,
+                    text = alarm.timeHours.toString() + ":" + alarm.timeMinutes.toString(),
                     fontWeight = FontWeight.W500,
                     fontSize = 42.sp,
                     textAlign = TextAlign.Start
@@ -180,20 +181,38 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
                 color = greyTextColor
             )
 
-
-
-
             Row(
                 modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                AlarmRepeatDays(dayText = "Mo")
-                AlarmRepeatDays(dayText = "Tu")
-                AlarmRepeatDays(dayText = "We")
-                AlarmRepeatDays(dayText = "Th")
-                AlarmRepeatDays(dayText = "Fr")
-                AlarmRepeatDays(dayText = "Sa")
-                AlarmRepeatDays(dayText = "Su")
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Mo",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.MONDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Tu",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.TUESDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "We",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.WEDNESDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Th",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.THURSDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Fr",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.FRIDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Sa",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.SATURDAY)
+                )
+                AlarmRepeatDayItemNonEditable(
+                    dayText = "Su",
+                    buttonEnabled = WeekDays.isDaySelected(alarm.repeatDays, WeekDays.SUNDAY)
+                )
             }
 
             // Alarm sleep info
@@ -210,7 +229,10 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
 }
 
 @Composable
-fun AlarmRepeatDays(dayText: String, buttonEnabled: Boolean = false) {
+fun AlarmRepeatDayItemNonEditable(
+    dayText: String,
+    buttonEnabled: Boolean = false
+) {
     Button(
         modifier = Modifier
             .width(38.dp)
@@ -221,7 +243,7 @@ fun AlarmRepeatDays(dayText: String, buttonEnabled: Boolean = false) {
             disabledContentColor = Color.Black,
             disabledContainerColor = appTertiaryColor
         ),
-        onClick = { /* Ignoring onClick */ },
+        onClick = {},
         contentPadding = PaddingValues(start = 9.dp, end = 9.dp),
         enabled = buttonEnabled
     ) {
