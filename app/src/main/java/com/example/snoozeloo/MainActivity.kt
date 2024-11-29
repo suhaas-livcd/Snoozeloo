@@ -1,6 +1,15 @@
 package com.example.snoozeloo
 
+import android.Manifest
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +24,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,6 +43,14 @@ class MainActivity : ComponentActivity() {
     private val appViewModel by viewModels<AppViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val isPushNotificationPermissionGranted = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+        if (isPushNotificationPermissionGranted != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                arrayOf( Manifest.permission.POST_NOTIFICATIONS),
+                1
+            )
+        }
+
         enableEdgeToEdge()
         setContent {
             val uiState by appViewModel.uiState.collectAsState()
@@ -81,6 +101,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+
     }
 }
 

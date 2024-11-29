@@ -1,7 +1,11 @@
 package com.example.snoozeloo.viewmodel
 
+import android.database.Cursor
+import android.media.RingtoneManager
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.snoozeloo.AlarmScheduler
 import com.example.snoozeloo.data.AlarmsRepository
 import com.example.snoozeloo.data.AppUiState
 import com.example.snoozeloo.data.SnoozelooAlarm
@@ -15,28 +19,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
-    private val repository: AlarmsRepository
+    private val repository: AlarmsRepository,
+    private val alarmScheduler: AlarmScheduler,
+    private val ringtoneManager: RingtoneManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
+    private var cursor: Cursor? = null
 
     init {
         // Fetch data from the repository
         fetchAlarms()
-
-        // Create alarm
-        viewModelScope.launch {
-//            withContext(Dispatchers.IO){
-//                repository.createAlarm(alarm = SnoozelooAlarm(name = "Wake Up", time = "10:00", isEnabled = true, sound = "Default", repeatDays = 0))
-//                repository.createAlarm(alarm = SnoozelooAlarm(name = "Education", time = "10:00", isEnabled = false, sound = "Default", repeatDays = 0))
-//                repository.createAlarm(alarm = SnoozelooAlarm(name = "Dinner", time = "10:00", isEnabled = true, sound = "Default", repeatDays = 0))
-//
-//            }
-        }
     }
 
     private fun fetchAlarms() {
@@ -44,6 +42,11 @@ class AppViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             repository.fetchAlarms().collect { alarms ->
                 _uiState.update { it.copy(isLoading = false, alarms = alarms) }
+                alarms.forEach { alarm ->
+                    if (alarm.isEnabled) {
+                        alarmScheduler.scheduleAlarm(alarm)
+                    }
+                }
             }
         }
     }
@@ -61,16 +64,31 @@ class AppViewModel @Inject constructor(
             SnoozelooAlarmEvents.SaveAlarm -> {
                 viewModelScope.launch {
                     withContext(Dispatchers.IO) {
-                        repository.createAlarm(alarm = _uiState.value.createAlarm)
+                        repository.upsertAlarm(alarm = _uiState.value.createAlarm)
                     }
                 }
             }
 
             SnoozelooAlarmEvents.SaveAlarmNameDialog -> {}
-            is SnoozelooAlarmEvents.SelectAlarmRingtone -> {}
-            is SnoozelooAlarmEvents.SetAlarmIsEnabled -> {
+            is SnoozelooAlarmEvents.SelectAlarmRingtone -> {
                 _uiState.update {
-                    it.copy(createAlarm = it.createAlarm.copy(isEnabled = event.isEnabled))
+                    it.copy(
+                        createAlarm = it.createAlarm.copy(
+                            alarmRingtoneTitle = event.ringtoneInfo.first,
+                            alarmRingtoneURI = event.ringtoneInfo.second.toString()
+                        )
+                    )
+                }
+
+            }
+
+            is SnoozelooAlarmEvents.SetAlarmIsEnabled -> {
+                viewModelScope.launch {
+                    withContext(Dispatchers.IO) {
+                        repository.upsertAlarm(alarm = _uiState.value.alarms.find {
+                            it.id == event.alarmId
+                        }!!.copy(isEnabled = event.isEnabled))
+                    }
                 }
             }
 
@@ -120,6 +138,36 @@ class AppViewModel @Inject constructor(
             is SnoozelooAlarmEvents.SetAlarmVolume -> {
                 _uiState.update {
                     it.copy(createAlarm = it.createAlarm.copy(alarmVolume = event.alarmVolume))
+                }
+            }
+
+            SnoozelooAlarmEvents.ClickOnAlarmRingtone -> {
+                Timber.d("Clicked Ringtones")
+                if (cursor == null) {
+                    ringtoneManager.setType(RingtoneManager.TYPE_ALARM)
+                }
+                // Get a cursor for available ringtones
+                cursor = ringtoneManager.cursor
+
+                // Loop through the cursor and fetch ringtone details
+                val ringtoneList: MutableList<Pair<String, Uri>> = mutableListOf()
+                // Adding silent
+                ringtoneList.add(Pair(first = "Silent", second = Uri.EMPTY))
+                cursor?.let {
+                    while (it.moveToNext()) {
+                        val title = it.getString(RingtoneManager.TITLE_COLUMN_INDEX)
+                        val uri = ringtoneManager.getRingtoneUri(it.position)
+                        ringtoneList.add(
+                            Pair(
+                                first = title,
+                                second = uri
+                            )
+                        )
+                    }
+                }
+
+                _uiState.update {
+                    it.copy(ringtoneList = ringtoneList)
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.example.snoozeloo.views
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -26,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.snoozeloo.R
 import com.example.snoozeloo.data.AppUiState
+import com.example.snoozeloo.data.SnoozelooAlarm
 import com.example.snoozeloo.data.SnoozelooAlarmEvents
 
 @Composable
@@ -41,19 +45,27 @@ fun AlarmRingtoneScreen(
         HeaderRow(navBackToAlarmSettingsScreen)
 
         // Wrap in LazyColumn
-        RingtonesList()
+        RingtonesList(uiState.createAlarm, uiState.ringtoneList, onEvent)
     }
 }
 
 @Composable
-private fun RingtonesList() {
+private fun RingtonesList(
+    alarm: SnoozelooAlarm,
+    ringtones: List<Pair<String, Uri>>,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
+) {
     Column(modifier = Modifier.padding(top = 24.dp, start = 16.dp, end = 16.dp)) {
-        RingtoneListItem(isSilent = true, isSelected = false, ringtoneName = "Silent")
-        RingtoneListItem(
-            isSilent = false,
-            isSelected = true,
-            ringtoneName = "Default (BrightMorning)"
-        )
+        LazyColumn() {
+            items(ringtones) { ringtone ->
+                RingtoneListItem(
+                    alarm,
+                    ringtone,
+                    onEvent = onEvent,
+                )
+            }
+        }
+
     }
 }
 
@@ -75,12 +87,23 @@ private fun HeaderRow(navBackToAlarmSettingsScreen: () -> Unit) {
 }
 
 @Composable
-fun RingtoneListItem(isSilent: Boolean = false, isSelected: Boolean = false, ringtoneName: String) {
+fun RingtoneListItem(
+    alarm: SnoozelooAlarm,
+    ringtone: Pair<String, Uri>,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
+) {
     Card(
         modifier = Modifier
             .padding(bottom = 10.dp)
             .fillMaxWidth()
-            .height(50.dp),
+            .height(50.dp)
+            .clickable {
+                onEvent(
+                    SnoozelooAlarmEvents.SelectAlarmRingtone(
+                        ringtone
+                    )
+                )
+            },
         shape = RoundedCornerShape(16.dp), colors = CardColors(
             containerColor = Color.White,
             disabledContentColor = Color.LightGray,
@@ -97,7 +120,7 @@ fun RingtoneListItem(isSilent: Boolean = false, isSelected: Boolean = false, rin
         ) {
             Image(
                 imageVector = ImageVector.vectorResource(
-                    if (isSilent) {
+                    if (ringtone.first == "Silent") {
                         R.drawable.ic_ringtone_silent
                     } else {
                         R.drawable.ic_ringtone_sound
@@ -109,13 +132,14 @@ fun RingtoneListItem(isSilent: Boolean = false, isSelected: Boolean = false, rin
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 6.dp, end = 6.dp),
-                text = ringtoneName, fontWeight = FontWeight.W600,
+                text = ringtone.first,
+                fontWeight = FontWeight.W600,
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (isSelected) {
+            if (alarm.alarmRingtoneURI == ringtone.second.toString()) {
                 Image(
                     imageVector = ImageVector.vectorResource(
                         R.drawable.ic_ringtone_selected

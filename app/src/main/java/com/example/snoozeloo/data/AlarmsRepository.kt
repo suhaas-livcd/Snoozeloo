@@ -14,10 +14,8 @@ class AlarmsRepository @Inject constructor(private val snoozelooAlarmDao: Snooze
         return snoozelooAlarmDao.getAllAlarms()
     }
 
-    fun createAlarm(alarm: SnoozelooAlarm) {
+    fun upsertAlarm(alarm: SnoozelooAlarm) {
         Timber.d("Creating alarm : $alarm")
         snoozelooAlarmDao.upsertAlarm(alarm = alarm)
     }
-
-
 }

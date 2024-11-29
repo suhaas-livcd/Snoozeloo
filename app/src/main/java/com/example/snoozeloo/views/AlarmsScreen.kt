@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.snoozeloo.AppUtils
 import com.example.snoozeloo.R
 import com.example.snoozeloo.data.AppUiState
 import com.example.snoozeloo.data.SnoozelooAlarm
@@ -48,7 +49,6 @@ import com.example.snoozeloo.ui.theme.appPrimaryColor
 import com.example.snoozeloo.ui.theme.appSecondaryColor
 import com.example.snoozeloo.ui.theme.appTertiaryColor
 import com.example.snoozeloo.ui.theme.greyTextColor
-import timber.log.Timber
 
 @Composable
 fun AlarmsScreen(
@@ -67,7 +67,7 @@ fun AlarmsScreen(
         }
 
         else -> {
-            AlarmListScreen(modifier, alarms = uiState.alarms)
+            AlarmListScreen(modifier, alarms = uiState.alarms, onEvent)
 
             // Show always floating action button
             FloatingActionButton(modifier, navToAlarmSettingsScreen = navToAlarmSettingsScreen)
@@ -76,7 +76,11 @@ fun AlarmsScreen(
 }
 
 @Composable
-fun AlarmListScreen(modifier: Modifier = Modifier, alarms: List<SnoozelooAlarm>) {
+fun AlarmListScreen(
+    modifier: Modifier = Modifier,
+    alarms: List<SnoozelooAlarm>,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
+) {
     Text(
         modifier = modifier.padding(16.dp),
         text = stringResource(R.string.your_alarms),
@@ -87,12 +91,16 @@ fun AlarmListScreen(modifier: Modifier = Modifier, alarms: List<SnoozelooAlarm>)
     if (alarms.isEmpty()) {
         EmptyAlarmsView(modifier)
     } else {
-        AlarmListView(modifier, alarms)
+        AlarmListView(modifier, alarms, onEvent)
     }
 }
 
 @Composable
-fun AlarmListView(modifier: Modifier = Modifier, alarms: List<SnoozelooAlarm>) {
+fun AlarmListView(
+    modifier: Modifier = Modifier,
+    alarms: List<SnoozelooAlarm>,
+    onEvent: (SnoozelooAlarmEvents) -> Unit
+) {
     LazyColumn(
         modifier = modifier
             .padding(top = 50.dp, start = 16.dp, end = 16.dp)
@@ -100,13 +108,15 @@ fun AlarmListView(modifier: Modifier = Modifier, alarms: List<SnoozelooAlarm>) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(alarms) { alarm ->
-            AlarmListItem(alarm = alarm)
+            AlarmListItem(alarm = alarm, onEvent)
         }
     }
 }
 
 @Composable
-fun AlarmListItem(alarm: SnoozelooAlarm) {
+fun AlarmListItem(alarm: SnoozelooAlarm, onEvent: (SnoozelooAlarmEvents) -> Unit) {
+    val alarmMetaInfo =
+        AppUtils.getAlarmMetaInfo(alarm.timeHours, alarm.timeMinutes, alarm.repeatDays)
     Card(
         shape = RoundedCornerShape(16.dp), colors = CardColors(
             containerColor = Color.White,
@@ -138,7 +148,12 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
 
                 Switch(
                     checked = alarm.isEnabled, onCheckedChange = {
-                        Timber.d("Alarm is enabled : $it")
+                        onEvent(
+                            SnoozelooAlarmEvents.SetAlarmIsEnabled(
+                                alarmId = alarm.id,
+                                isEnabled = !alarm.isEnabled
+                            )
+                        )
                     }, colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = appPrimaryColor,
@@ -166,7 +181,7 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
 
                 Text(
                     modifier = Modifier.padding(bottom = 6.dp),
-                    text = "AM",
+                    text = alarmMetaInfo.alarmAmPm,
                     fontWeight = FontWeight.W500,
                     fontSize = 24.sp
                 )
@@ -175,7 +190,7 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
             // Alarm sleep info
             Text(
                 modifier = Modifier.padding(top = 4.dp),
-                text = "Alarm in 6h 30mins",
+                text = alarmMetaInfo.nextAlarmTimeRemaining,
                 fontWeight = FontWeight.W500,
                 fontSize = 14.sp,
                 color = greyTextColor
@@ -216,14 +231,14 @@ fun AlarmListItem(alarm: SnoozelooAlarm) {
             }
 
             // Alarm sleep info
-            Text(
-                modifier = Modifier.padding(top = 4.dp),
-                text = "Go to bed at 02:00AM to get 8h of sleep",
-                fontWeight = FontWeight.W500,
-                fontSize = 14.sp,
-                color = greyTextColor
-            )
-
+            alarmMetaInfo.sleepBedTime?.let {
+                Text(
+                    modifier = Modifier.padding(top = 4.dp),
+                    text = it,
+                    fontSize = 14.sp,
+                    color = greyTextColor
+                )
+            }
         }
     }
 }

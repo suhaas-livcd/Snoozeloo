@@ -476,8 +476,9 @@ private fun RingtoneOptions(
                     .wrapContentWidth()
                     .clickable {
                         navToAlarmRingtonesScreen()
+                        onEvent(SnoozelooAlarmEvents.ClickOnAlarmRingtone)
                     },
-                text = "Default",
+                text = alarmState.alarmRingtoneTitle,
                 fontWeight = FontWeight.W500,
                 fontSize = 14.sp,
                 color = greyTextColor

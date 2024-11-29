@@ -12,7 +12,8 @@ data class SnoozelooAlarm(
     val timeMinutes: Int = 0,
     val isEnabled: Boolean = true,
     val repeatDays: Int = 0,
-    val alarmRingtone: String = "Default",
+    val alarmRingtoneURI: String = "Silent",
+    val alarmRingtoneTitle: String = "Default",
     val isAlarmSilent: Boolean = false,
     val alarmVolume: Float = 0.5f,
     val vibrate: Boolean = true
